@@ -9,4 +9,5 @@ graphviz
 Cython
 utils~=1.0.1
 funcy~=1.16
+iterative-stratification~=0.1.6
 pycocotools~=2.0.2

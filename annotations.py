@@ -1,9 +1,69 @@
 #Run this script to preprocess images from the original imported taco dataset, place them into corresponding folders
 import os
 import json
-DEST_NAME_DIR = 'annotations.json'
+from collections import defaultdict, Counter
+import funcy
+import numpy as np
+from iterstrat.ml_stratifiers import MultilabelStratifiedShuffleSplit
+
+
+
+NEW_CATEGORY_DIR = 'annotations.json'
+TRAIN_DEST = 'train_annotations.json'
+TEST_DEST = 'test_annotations.json'
 SOURCE_ANNOTATIONS_DIR = './data/annotations_unofficial.json'
 
+
+#Save dictionary in coco dataset style
+def save_coco(dest, info,
+              images, annotations, categories):
+    data_dict = {'info': info,
+                 'images': images,
+                 'annotations': annotations,
+                 'categories': categories}
+    with open(dest, 'w') as f:
+        json.dump(data_dict,
+                  f, indent=2, sort_keys=True)
+    return data_dict
+
+# filter_annotations and save_coco on akarazniewicz/cocosplit
+def filter_annotations(annotations, images):
+    image_ids = funcy.lmap(lambda im: int(im['id']), images)
+    return funcy.lfilter(lambda ann:
+                         int(ann['image_id']) in image_ids, annotations)
+
+# function based on https://github.com/trent-b/iterative-stratification''', shuffles annotations
+#into train or test folders based on a random split
+def MultiStratifiedShuffleSplit(images,
+                                annotations,
+                                test_size):
+    # count categories per image
+    categories_per_image = defaultdict(Counter)
+    max_id = 0
+    for ann in annotations:
+        categories_per_image[ann['image_id']][ann['category_id']] += 1
+        if ann['category_id'] > max_id:
+            max_id = ann['category_id']
+
+    # prepare list with count of cateory objects per image
+    all_categories = []
+    for cat in categories_per_image.values():
+        pair = []
+        for i in range(1, max_id + 1):
+            pair.append(cat[i])
+        all_categories.append(pair)
+
+    # multilabel-stratified-split
+    strat_split = MultilabelStratifiedShuffleSplit(n_splits=1,
+                                                   test_size=test_size,
+                                                   random_state=2020)
+
+    for train_index, test_index in strat_split.split(images,
+                                                     all_categories):
+        x = [images[i] for i in train_index]
+        y = [images[i] for i in test_index]
+    print('Train:', len(x), 'images, test:', len(y))
+    return x, y
 
 # Converts TACO labels to COMP3330 classes (Plastic Bags, Plastic bottles, other, no plastic)
 def taco_to_comp3330(label):
@@ -59,6 +119,42 @@ def taco_to_comp3330(label):
         label = "unknown"
     return label
 
+#Now split the dataset into training and test files respectively
+def split_coco_dataset(dataset_directory,
+                       test_size=0.2):
+
+    with open(dataset_directory, 'r') as f:
+        dataset = json.loads(f.read())
+
+    categories = dataset['categories']
+    info = dataset['info']
+    annotations = dataset['annotations']
+    images = dataset['images']
+
+    images_with_annotations = funcy.lmap(lambda ann:
+                                         int(ann['image_id']), annotations)
+    images = funcy.lremove(lambda i: i['id'] not in
+                                     images_with_annotations, images)
+
+    #If only one category than standard random shuffle
+    if len(dataset['categories']) == 1:
+        np.random.shuffle(images)
+        x = images[int(len(images) * test_size):]
+        y = images[0:int(len(images) * test_size)]
+        print('Train:', len(x), 'images, valid:', len(y))
+    #Otherwise use multi stratified shuffle split
+    else:
+        x, y = MultiStratifiedShuffleSplit(images, annotations, test_size)
+
+
+    train = save_coco(TRAIN_DEST, info,
+                      x, filter_annotations(annotations, x), categories)
+    test = save_coco(TEST_DEST , info, y,
+                     filter_annotations(annotations, y), categories)
+
+    print('Finished stratified shuffle split. Results saved in:',
+          TRAIN_DEST, TEST_DEST)
+    return train, test
 
 
 #The main script, correctly categorises dataset
@@ -131,5 +227,8 @@ if __name__ == '__main__':
         cat['category'] = category
         cat['id'] = id
 
-    with open(DEST_NAME_DIR, 'w') as f:
+    with open(NEW_CATEGORY_DIR, 'w') as f:
         json.dump(dataset, f)
+
+    #Split the data into train test splits, default 80-20 train-test split
+    split_coco_dataset(NEW_CATEGORY_DIR, 0.2)
