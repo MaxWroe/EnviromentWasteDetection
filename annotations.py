@@ -1,4 +1,18 @@
+'''
+Provides new annotations for TACO dataset images, alters classifications  from the 60 original classes to be inline
+with COMP3330 requirements (Plastic Cups, Plastic Bags, Other Plastic Waste, No Plastic Waste)
+This script has been modified from :
+https://github.com/wimlds-trojmiasto/detect-waste/blob/7852bce50405b9797e9b2c5b09b4ac033aa52edf/annotations_preprocessing.py
+For the purposes of COMP3330 Assignment 2 Part 2
+
+
+'''
+
 #Run this script to preprocess images from the original imported taco dataset, place them into corresponding folders
+
+
+
+
 import os
 import json
 from collections import defaultdict, Counter
@@ -8,7 +22,7 @@ from iterstrat.ml_stratifiers import MultilabelStratifiedShuffleSplit
 
 
 
-NEW_CATEGORY_DIR = 'annotations.json'
+NEW_CATEGORY_DIR = 'data/annotations_comp3330.json'
 TRAIN_DEST = 'train_annotations.json'
 TEST_DEST = 'test_annotations.json'
 SOURCE_ANNOTATIONS_DIR = './data/annotations_unofficial.json'
@@ -231,4 +245,4 @@ if __name__ == '__main__':
         json.dump(dataset, f)
 
     #Split the data into train test splits, default 80-20 train-test split
-    split_coco_dataset(NEW_CATEGORY_DIR, 0.2)
+    # split_coco_dataset(NEW_CATEGORY_DIR, 0.2)
