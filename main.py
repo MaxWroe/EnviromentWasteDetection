@@ -1,4 +1,5 @@
 """
+Main resource : https://medium.com/fullstackai/how-to-train-an-object-detector-with-your-own-coco-dataset-in-pytorch-319e7090da5
 Preconditions :
 
 Date: 03/06/1998
@@ -61,7 +62,7 @@ def get_model_instance_segmentation(num_classes):
     return model
 
 
-# 4 classes; Only target class or background
+# 4 classes;
 num_classes = 4
 num_epochs = 10
 model = get_model_instance_segmentation(num_classes)

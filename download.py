@@ -9,12 +9,10 @@ Modifications made by Max Wroe:
 '''
 
 import os.path
-import argparse
 import json
 from PIL import Image
 import requests
 from io import BytesIO
-import sys
 
 annotations_path = './data/annotations_comp3330.json'
 dataset_dir = "./data/images/unofficial"
