@@ -61,8 +61,8 @@ def get_model_instance_segmentation(num_classes):
     return model
 
 
-# 2 classes; Only target class or background
-num_classes = 2
+# 4 classes; Only target class or background
+num_classes = 4
 num_epochs = 10
 model = get_model_instance_segmentation(num_classes)
 
